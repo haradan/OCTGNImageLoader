@@ -37,6 +37,12 @@ public class NetrunnerImageLoader {
 	private boolean isActive = false;
 	private boolean isAbort = false;
 	
+	private AbortListener abortListener;
+	
+	public static interface AbortListener {
+		public boolean isAbort();
+	}
+	
 	private synchronized void activate() throws InterruptedException {
 		if(isActive) {
 			isAbort = true;
@@ -54,19 +60,23 @@ public class NetrunnerImageLoader {
 	}
 	
 	private synchronized void checkAbort() throws AbortException {
-		if(isAbort) throw new AbortException();
+		if(isAbort
+		|| (abortListener != null && abortListener.isAbort())) {
+			throw new AbortException();
+		}
 	}
 	
 	private static class AbortException extends Exception {
 		private static final long serialVersionUID = 5965018251907378579L;
 	}
 	
-	public void downloadOctgnImages(LogOutput log, File octgnDir) {
+	public void downloadOctgnImages(LogOutput log, File octgnDir, AbortListener abortListener) {
 		try {
 			activate();
 		} catch (InterruptedException e) {
 			return;
 		}
+		this.abortListener = abortListener;
 		try {
 			doDownloadOctgnImages(log, octgnDir);
 		} catch (AbortException e) {
