@@ -1,11 +1,10 @@
 package uk.co.haradan.netrunnerimageloader;
 
+
 public class WebsiteCard {
 	
 	private String title;
 	private String imgUrl;
-	private int cycleNum;
-	private int cardNum;
 	
 	public String getTitle() {
 		return title;
@@ -18,18 +17,6 @@ public class WebsiteCard {
 	}
 	public void setImgUrl(String imgUrl) {
 		this.imgUrl = imgUrl;
-	}
-	public int getCycleNum() {
-		return cycleNum;
-	}
-	public void setCycleNum(int cycleNum) {
-		this.cycleNum = cycleNum;
-	}
-	public int getCardNum() {
-		return cardNum;
-	}
-	public void setCardNum(int cardNum) {
-		this.cardNum = cardNum;
 	}
 
 }

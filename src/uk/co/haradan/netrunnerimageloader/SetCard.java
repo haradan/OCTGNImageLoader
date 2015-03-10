@@ -1,9 +1,12 @@
 package uk.co.haradan.netrunnerimageloader;
 
+import uk.co.haradan.netrunnerimageloader.cardkeys.CardKey;
+
 public class SetCard {
 	
 	private String id;
 	private String name;
+	private CardKey cardKey = new CardKey();
 	
 	public String getId() {
 		return id;
@@ -16,6 +19,9 @@ public class SetCard {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	public CardKey getCardKey() {
+		return cardKey;
 	}
 
 }

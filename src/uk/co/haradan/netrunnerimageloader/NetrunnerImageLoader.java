@@ -20,6 +20,10 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
+import uk.co.haradan.netrunnerimageloader.cardkeys.CardKey;
+import uk.co.haradan.netrunnerimageloader.cardkeys.CardKeyBuilderConfig;
+import uk.co.haradan.netrunnerimageloader.cardkeys.JsonCardKeyBuilder;
+import uk.co.haradan.netrunnerimageloader.cardkeys.SaxCardKeyBuilder;
 import uk.co.haradan.util.HttpUtils;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -29,10 +33,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 public class NetrunnerImageLoader {
 	
-	private static final String NETRUNNERDB_CARDS_URL = "http://netrunnerdb.com/api/cards/";
-	private static final String NETRUNNERDB_IMAGE_BASE_URL = "http://netrunnerdb.com";
-	
-	private static final String NETRUNNER_PLUGIN_DIRNAME = "0f38e453-26df-4c04-9d67-6d43de939c77";
+	private OCTGNImageLoaderConfig octgnPluginConfig = OCTGNImageLoaderConfig.NETRUNNER_CONFIG;
 	
 	private boolean isActive = false;
 	private boolean isAbort = false;
@@ -70,6 +71,13 @@ public class NetrunnerImageLoader {
 		private static final long serialVersionUID = 5965018251907378579L;
 	}
 	
+	public OCTGNImageLoaderConfig getOctgnPluginConfig() {
+		return octgnPluginConfig;
+	}
+	public void setOctgnPluginConfig(OCTGNImageLoaderConfig octgnPluginConfig) {
+		this.octgnPluginConfig = octgnPluginConfig;
+	}
+
 	public void downloadOctgnImages(LogOutput log, File octgnDir, AbortListener abortListener) {
 		try {
 			activate();
@@ -95,9 +103,11 @@ public class NetrunnerImageLoader {
 		
 		log.println("Using OCTGN data directory: "+octgnDir.getAbsolutePath());
 		
+		CardKeyBuilderConfig keyBuilderConf = octgnPluginConfig.getCardKeyBuilderConfig();
+		
 		List<Set> sets;
 		try {
-			sets = readSets(log, octgnDir);
+			sets = readSets(log, octgnDir, keyBuilderConf.getSaxKeyBuilders());
 		} catch (LoaderMsgException e) {
 			log.errorln(e.getMessage());
 			return;
@@ -106,11 +116,12 @@ public class NetrunnerImageLoader {
 			return;
 		}
 		
-		log.println("Using NetrunnerDB cards feed: "+NETRUNNERDB_CARDS_URL);
+		String cardsUrl = octgnPluginConfig.getCardsUrl();
+		log.println("Using cards feed: "+cardsUrl);
 		
-		Map<String, WebsiteCard> cardsByNum;
+		Map<CardKey, WebsiteCard> cardsByNum;
 		try {
-			cardsByNum = readCardsByNum(NETRUNNERDB_CARDS_URL);
+			cardsByNum = readCardsByKeys(cardsUrl, keyBuilderConf.getJsonKeyBuilders());
 		} catch (Exception e) {
 			log.error(e);
 			return;
@@ -121,68 +132,78 @@ public class NetrunnerImageLoader {
 		log.println("Complete");
 	}
 	
-	private static Map<String, WebsiteCard> readCardsByNum(String url) throws JsonParseException, IOException, KeyManagementException, NoSuchAlgorithmException {
-		URLConnection conn = HttpUtils.getConnection(NETRUNNERDB_CARDS_URL);
+	private static Map<CardKey, WebsiteCard> readCardsByKeys(String url, JsonCardKeyBuilder[] builders) throws JsonParseException, IOException, KeyManagementException, NoSuchAlgorithmException {
+		URLConnection conn = HttpUtils.getConnection(url);
 		InputStream is = conn.getInputStream();
 		try {
 			JsonFactory jsonFactory = new JsonFactory();
 			JsonParser parser = jsonFactory.createParser(is);
 			
-			return readCardsByNum(parser);
+			return readCardsByKeys(parser, builders);
 			
 		} finally {
 			is.close();
 		}
 	}
 	
-	private static Map<String, WebsiteCard> readCardsByNum(JsonParser parser) throws JsonParseException, IOException {
+	private static Map<CardKey, WebsiteCard> readCardsByKeys(JsonParser parser, JsonCardKeyBuilder[] builders) throws JsonParseException, IOException {
 		
 		JsonToken token = parser.nextToken();
 		if(token != JsonToken.START_ARRAY) {
 			return null;
 		}
 		
-		Map<String, WebsiteCard> cardsByNum = new HashMap<String, WebsiteCard>();
+		Map<CardKey, WebsiteCard> cardsByKey = new HashMap<CardKey, WebsiteCard>();
 
 		WebsiteCard card = null;
 		while((token = parser.nextToken()) != null) {
 			
 			if(token == JsonToken.START_OBJECT) {
 				card = new WebsiteCard();
+				for(JsonCardKeyBuilder builder : builders) {
+					builder.startCard();
+				}
 				
 			} else if(token == JsonToken.FIELD_NAME) {
 				String fieldName = parser.getCurrentName();
+				JsonToken valueToken = parser.nextToken();
+				
+				for(JsonCardKeyBuilder builder : builders) {
+					builder.readField(fieldName, valueToken, parser);
+				}
+				
 				if("title".equals(fieldName)) {
-					String title = parser.nextTextValue();
+					String title = parser.getValueAsString();
 					card.setTitle(title);
-				} else if("number".equals(fieldName)) {
-					card.setCardNum(parser.nextIntValue(card.getCardNum()));
-				} else if("cyclenumber".equals(fieldName)) {
-					card.setCycleNum(parser.nextIntValue(card.getCycleNum()));
 				} else if("imagesrc".equals(fieldName)) {
-					String url = parser.nextTextValue();
+					String url = parser.getValueAsString();
 					card.setImgUrl(url);
 				}
 				
 			} else if(token == JsonToken.END_OBJECT) {
+
+				CardKey key = new CardKey();
+				for(JsonCardKeyBuilder builder : builders) {
+					builder.endCard();
+					String keyPart = builder.getKey();
+					key.addKeyPart(keyPart);
+				}
 				
-				// OCTGN card ids always end with their cycle number and card number in this format, so we can identify them this way.
-				String num = String.format("%1$02d%2$03d", card.getCycleNum(), card.getCardNum());
-				cardsByNum.put(num, card);
+				cardsByKey.put(key, card);
 				
 			} else if(token == JsonToken.END_ARRAY) {
 				break;
 			}
 		}
 		
-		return cardsByNum;
+		return cardsByKey;
 	}
 	
-	private List<Set> readSets(LogOutput log, File octgnDir) throws ParserConfigurationException, SAXException, LoaderMsgException {
+	private List<Set> readSets(LogOutput log, File octgnDir, SaxCardKeyBuilder[] cardKeyBuilders) throws ParserConfigurationException, SAXException, LoaderMsgException {
 		
-		File gameDbDir = new File(octgnDir, "GameDatabase/"+NETRUNNER_PLUGIN_DIRNAME);
+		File gameDbDir = new File(octgnDir, "GameDatabase/"+octgnPluginConfig.getPluginId());
 		if(! gameDbDir.isDirectory()) {
-			throw new LoaderMsgException("Could not find OCTGN Netrunner plugin directory, is it installed?");
+			throw new LoaderMsgException("Could not find OCTGN "+octgnPluginConfig.getPluginName()+" plugin directory, is it installed?");
 		}
 		
 		File gameDbSetsDir = new File(gameDbDir, "Sets");
@@ -193,7 +214,7 @@ public class NetrunnerImageLoader {
 			}
 		});
 		if(setDirs == null || setDirs.length < 1) {
-			throw new LoaderMsgException("Could not find OCTGN Netrunner sets, have cards been downloaded?");
+			throw new LoaderMsgException("Could not find OCTGN "+octgnPluginConfig.getPluginName()+" sets, have cards been downloaded?");
 		}
 
 	    SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -202,7 +223,7 @@ public class NetrunnerImageLoader {
 		List<Set> sets = new ArrayList<Set>();
 		for(File setDir : setDirs) {
 			File setXml = new File(setDir, "set.xml");
-			SetXmlHandler handler = new SetXmlHandler(setDir.getName());
+			SetXmlHandler handler = new SetXmlHandler(setDir.getName(), cardKeyBuilders);
 		    try {
 				parser.parse(setXml, handler);
 			} catch (Exception e) {
@@ -215,10 +236,12 @@ public class NetrunnerImageLoader {
 		return sets;
 	}
 	
-	private void downloadImages(LogOutput log, File octgnDir, Map<String, WebsiteCard> cardsByNum, List<Set> sets) throws AbortException {
+	private void downloadImages(LogOutput log, File octgnDir, Map<CardKey, WebsiteCard> cardsByKey, List<Set> sets) throws AbortException {
 		
-		File imageSetsDir = new File(octgnDir, "ImageDatabase/"+NETRUNNER_PLUGIN_DIRNAME+"/Sets");
+		File imageSetsDir = new File(octgnDir, "ImageDatabase/"+octgnPluginConfig.getPluginId()+"/Sets");
 		imageSetsDir.mkdirs();
+		
+		String imageBaseUrl = octgnPluginConfig.getImageBaseUrl();
 		
 		for(Set set : sets) {
 			final String setId = set.getId();
@@ -232,18 +255,18 @@ public class NetrunnerImageLoader {
 
 				// Confirm this card can be downloaded
 				final String cardId = setCard.getId();
-				String num = cardId.substring(cardId.length() - 5);
-				WebsiteCard card = cardsByNum.get(num);
+				CardKey key = setCard.getCardKey();
+				WebsiteCard card = cardsByKey.get(key);
 				if(card == null) {
 					log.println("Card not in website: \""+setCard.getName()+"\" ("+cardId+")");
 					continue;
 				}
 				String url = card.getImgUrl();
 				if(url == null) {
-					log.println("Card without image URL: \""+card.getTitle()+"\" (#"+num+", id "+cardId+")");
+					log.println("Card without image URL: \""+card.getTitle()+"\" ("+cardId+")");
 					continue;
 				}
-				url = NETRUNNERDB_IMAGE_BASE_URL+url;
+				url = imageBaseUrl+url;
 
 				// Download new card file
 				File downloadFile = new File(setImgDir, cardId+".png.tmp");
