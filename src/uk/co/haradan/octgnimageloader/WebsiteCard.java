@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader;
+package uk.co.haradan.octgnimageloader;
 
 
 public class WebsiteCard {

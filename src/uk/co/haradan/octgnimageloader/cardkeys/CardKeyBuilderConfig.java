@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader.cardkeys;
+package uk.co.haradan.octgnimageloader.cardkeys;
 
 
 public class CardKeyBuilderConfig {

@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader;
+package uk.co.haradan.octgnimageloader;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -27,16 +27,16 @@ import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
-public class NetrunnerImageLoaderUI {
+public class OCTGNImageLoaderUI {
 	
 	private final JFrame frame;
 	private final LogOutput log;
-	private final NetrunnerImageLoader loader;
+	private final OCTGNImageLoader loader;
 	private final JTextField dirTxt;
 	private final JTextField pluginTxt;
 	private Worker worker;
 	
-	public NetrunnerImageLoaderUI(NetrunnerImageLoader useLoader) {
+	public OCTGNImageLoaderUI(OCTGNImageLoader useLoader) {
 		loader = useLoader;
 		
 		frame = new JFrame("OCTGN Card Image Loader");
@@ -143,7 +143,7 @@ public class NetrunnerImageLoaderUI {
 		return frame;
 	}
 	
-	public NetrunnerImageLoader getLoader() {
+	public OCTGNImageLoader getLoader() {
 		return loader;
 	}
 	
@@ -249,7 +249,7 @@ public class NetrunnerImageLoaderUI {
 		dialog.setVisible(true);
 	}
 	
-	private class Worker extends SwingWorker<Void, Void> implements NetrunnerImageLoader.AbortListener {
+	private class Worker extends SwingWorker<Void, Void> implements OCTGNImageLoader.AbortListener {
 		
 		private final File octgnDir;
 		

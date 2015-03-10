@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader;
+package uk.co.haradan.octgnimageloader;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -20,10 +20,10 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
-import uk.co.haradan.netrunnerimageloader.cardkeys.CardKey;
-import uk.co.haradan.netrunnerimageloader.cardkeys.CardKeyBuilderConfig;
-import uk.co.haradan.netrunnerimageloader.cardkeys.JsonCardKeyBuilder;
-import uk.co.haradan.netrunnerimageloader.cardkeys.SaxCardKeyBuilder;
+import uk.co.haradan.octgnimageloader.cardkeys.CardKey;
+import uk.co.haradan.octgnimageloader.cardkeys.CardKeyBuilderConfig;
+import uk.co.haradan.octgnimageloader.cardkeys.JsonCardKeyBuilder;
+import uk.co.haradan.octgnimageloader.cardkeys.SaxCardKeyBuilder;
 import uk.co.haradan.util.HttpUtils;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -31,7 +31,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-public class NetrunnerImageLoader {
+public class OCTGNImageLoader {
 	
 	private OCTGNImageLoaderConfig octgnPluginConfig = OCTGNImageLoaderConfig.NETRUNNER_CONFIG;
 	

@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader.cardkeys;
+package uk.co.haradan.octgnimageloader.cardkeys;
 
 import java.util.ArrayList;
 import java.util.List;

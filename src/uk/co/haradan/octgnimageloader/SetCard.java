@@ -1,6 +1,6 @@
-package uk.co.haradan.netrunnerimageloader;
+package uk.co.haradan.octgnimageloader;
 
-import uk.co.haradan.netrunnerimageloader.cardkeys.CardKey;
+import uk.co.haradan.octgnimageloader.cardkeys.CardKey;
 
 public class SetCard {
 	

@@ -1,10 +1,10 @@
-package uk.co.haradan.netrunnerimageloader;
+package uk.co.haradan.octgnimageloader;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import uk.co.haradan.netrunnerimageloader.cardkeys.SaxCardKeyBuilder;
+import uk.co.haradan.octgnimageloader.cardkeys.SaxCardKeyBuilder;
 
 public class SetXmlHandler extends DefaultHandler {
 	

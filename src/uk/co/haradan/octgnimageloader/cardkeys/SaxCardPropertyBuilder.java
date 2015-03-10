@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader.cardkeys;
+package uk.co.haradan.octgnimageloader.cardkeys;
 
 import org.xml.sax.Attributes;
 

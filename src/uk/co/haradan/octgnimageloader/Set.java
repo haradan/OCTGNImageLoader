@@ -1,4 +1,4 @@
-package uk.co.haradan.netrunnerimageloader;
+package uk.co.haradan.octgnimageloader;
 
 import java.util.ArrayList;
 import java.util.List;
