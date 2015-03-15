@@ -145,6 +145,7 @@ public class OCTGNImageLoader {
 		}
 		
 		if(sorter != null) sorter.sort(sets);
+		log.println("Found "+sets.size()+" sets");
 		return sets;
 	}
 
