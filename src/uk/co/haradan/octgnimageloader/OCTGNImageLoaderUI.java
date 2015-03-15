@@ -253,7 +253,7 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 		dialog.add(okBtn, BorderLayout.SOUTH);
 		
 		dialog.setSize(400, 200);
-		dialog.setLocationRelativeTo(null);
+		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 	}
@@ -363,7 +363,7 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 		dialog.add(okBtn, BorderLayout.SOUTH);
 		
 		dialog.setSize(400, 200);
-		dialog.setLocationRelativeTo(null);
+		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 	}
