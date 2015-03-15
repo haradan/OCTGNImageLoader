@@ -6,6 +6,7 @@ import java.util.List;
 public class Set {
 	
 	private String id;
+	private int number = -1;
 	private String name;
 	private final List<SetCard> cards = new ArrayList<SetCard>();
 	
@@ -14,6 +15,12 @@ public class Set {
 	}
 	public void setId(String id) {
 		this.id = id;
+	}
+	public int getNumber() {
+		return number;
+	}
+	public void setNumber(int number) {
+		this.number = number;
 	}
 	public String getName() {
 		return name;

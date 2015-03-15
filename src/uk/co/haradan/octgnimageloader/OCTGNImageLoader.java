@@ -24,6 +24,8 @@ import uk.co.haradan.octgnimageloader.cardkeys.CardKey;
 import uk.co.haradan.octgnimageloader.cardkeys.CardKeyBuilderConfig;
 import uk.co.haradan.octgnimageloader.cardkeys.JsonCardKeyBuilder;
 import uk.co.haradan.octgnimageloader.cardkeys.SaxCardKeyBuilder;
+import uk.co.haradan.octgnimageloader.config.OCTGNImageLoaderConfig;
+import uk.co.haradan.octgnimageloader.config.SetSorter;
 import uk.co.haradan.util.HttpUtils;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -71,14 +73,82 @@ public class OCTGNImageLoader {
 		private static final long serialVersionUID = 5965018251907378579L;
 	}
 	
-	public OCTGNImageLoaderConfig getOctgnPluginConfig() {
+	public synchronized OCTGNImageLoaderConfig getOctgnPluginConfig() {
 		return octgnPluginConfig;
 	}
-	public void setOctgnPluginConfig(OCTGNImageLoaderConfig octgnPluginConfig) {
+	public synchronized void setOctgnPluginConfig(OCTGNImageLoaderConfig octgnPluginConfig) {
 		this.octgnPluginConfig = octgnPluginConfig;
 	}
+	
+	public List<Set> loadSets(LogOutput log, File octgnDir) {
+		try {
+			return readSets(log, octgnDir);
+		} catch (Exception e) {
+			log.error(e);
+			return null;
+		}
+	}
+	
+	private List<Set> readSets(LogOutput log, File octgnDir) throws ParserConfigurationException, SAXException {
+		
+		if(! octgnDir.isDirectory()) {
+			log.errorln("Specified OCTGN data directory does not exist, please ensure it is correct or install OCTGN.");
+			return null;
+		}
+		
+		String pluginId;
+		String pluginName;
+		SaxCardKeyBuilder[] cardKeyBuilders;
+		SetSorter sorter;
+		synchronized(this) {
+			CardKeyBuilderConfig keyBuilderConf = octgnPluginConfig.getCardKeyBuilderConfig();
+			cardKeyBuilders = keyBuilderConf.getSaxKeyBuilders();
+			pluginId = octgnPluginConfig.getPluginId();
+			pluginName = octgnPluginConfig.getPluginName();
+			sorter = octgnPluginConfig.getSetSorter();
+		}
+		
+		File gameDbDir = new File(octgnDir, "GameDatabase/"+pluginId);
+		if(! gameDbDir.isDirectory()) {
+			log.errorln("Could not find OCTGN "+pluginName+" plugin directory, is it installed?");
+			return null;
+		}
+		
+		File gameDbSetsDir = new File(gameDbDir, "Sets");
+		File[] setDirs = gameDbSetsDir.listFiles(new FileFilter() {
+			@Override
+			public boolean accept(File arg) {
+				return arg.isDirectory();
+			}
+		});
+		if(setDirs == null || setDirs.length < 1) {
+			log.errorln("Could not find OCTGN "+pluginName+" sets, have cards been downloaded?");
+			return null;
+		}
+		
+		log.println("Loading sets for "+pluginName+" from OCTGN directory: "+octgnDir.getAbsolutePath());
 
-	public void downloadOctgnImages(LogOutput log, File octgnDir, AbortListener abortListener) {
+	    SAXParserFactory spf = SAXParserFactory.newInstance();
+		SAXParser parser = spf.newSAXParser();
+		
+		List<Set> sets = new ArrayList<Set>();
+		for(File setDir : setDirs) {
+			File setXml = new File(setDir, "set.xml");
+			SetXmlHandler handler = new SetXmlHandler(setDir.getName(), cardKeyBuilders);
+		    try {
+				parser.parse(setXml, handler);
+			} catch (Exception e) {
+				log.error(e);
+				continue;
+			}
+		    sets.add(handler.getSet());
+		}
+		
+		if(sorter != null) sorter.sort(sets);
+		return sets;
+	}
+
+	public void downloadOctgnImages(LogOutput log, File octgnDir, List<Set> sets, AbortListener abortListener) {
 		try {
 			activate();
 		} catch (InterruptedException e) {
@@ -86,7 +156,7 @@ public class OCTGNImageLoader {
 		}
 		this.abortListener = abortListener;
 		try {
-			doDownloadOctgnImages(log, octgnDir);
+			doDownloadOctgnImages(log, octgnDir, sets);
 		} catch (AbortException e) {
 			log.errorln("Aborted");
 		} finally {
@@ -94,29 +164,21 @@ public class OCTGNImageLoader {
 		}
 	}
 	
-	private void doDownloadOctgnImages(LogOutput log, File octgnDir) throws AbortException {
+	private void doDownloadOctgnImages(LogOutput log, File octgnDir, List<Set> sets) throws AbortException {
 		
 		if(! octgnDir.isDirectory()) {
 			log.errorln("Specified OCTGN data directory does not exist, please ensure it is correct or install OCTGN.");
 			return;
 		}
 		
-		log.println("Using OCTGN data directory: "+octgnDir.getAbsolutePath());
+		CardKeyBuilderConfig keyBuilderConf;
+		String cardsUrl;
 		
-		CardKeyBuilderConfig keyBuilderConf = octgnPluginConfig.getCardKeyBuilderConfig();
-		
-		List<Set> sets;
-		try {
-			sets = readSets(log, octgnDir, keyBuilderConf.getSaxKeyBuilders());
-		} catch (LoaderMsgException e) {
-			log.errorln(e.getMessage());
-			return;
-		} catch (Exception e) {
-			log.error(e);
-			return;
+		synchronized(this) {
+			keyBuilderConf = octgnPluginConfig.getCardKeyBuilderConfig();
+			cardsUrl = octgnPluginConfig.getCardsUrl();
 		}
 		
-		String cardsUrl = octgnPluginConfig.getCardsUrl();
 		log.println("Using cards feed: "+cardsUrl);
 		
 		Map<CardKey, WebsiteCard> cardsByNum;
@@ -199,49 +261,17 @@ public class OCTGNImageLoader {
 		return cardsByKey;
 	}
 	
-	private List<Set> readSets(LogOutput log, File octgnDir, SaxCardKeyBuilder[] cardKeyBuilders) throws ParserConfigurationException, SAXException, LoaderMsgException {
-		
-		File gameDbDir = new File(octgnDir, "GameDatabase/"+octgnPluginConfig.getPluginId());
-		if(! gameDbDir.isDirectory()) {
-			throw new LoaderMsgException("Could not find OCTGN "+octgnPluginConfig.getPluginName()+" plugin directory, is it installed?");
-		}
-		
-		File gameDbSetsDir = new File(gameDbDir, "Sets");
-		File[] setDirs = gameDbSetsDir.listFiles(new FileFilter() {
-			@Override
-			public boolean accept(File arg) {
-				return arg.isDirectory();
-			}
-		});
-		if(setDirs == null || setDirs.length < 1) {
-			throw new LoaderMsgException("Could not find OCTGN "+octgnPluginConfig.getPluginName()+" sets, have cards been downloaded?");
-		}
-
-	    SAXParserFactory spf = SAXParserFactory.newInstance();
-		SAXParser parser = spf.newSAXParser();
-		
-		List<Set> sets = new ArrayList<Set>();
-		for(File setDir : setDirs) {
-			File setXml = new File(setDir, "set.xml");
-			SetXmlHandler handler = new SetXmlHandler(setDir.getName(), cardKeyBuilders);
-		    try {
-				parser.parse(setXml, handler);
-			} catch (Exception e) {
-				log.error(e);
-				continue;
-			}
-		    sets.add(handler.getSet());
-		}
-		
-		return sets;
-	}
-	
 	private void downloadImages(LogOutput log, File octgnDir, Map<CardKey, WebsiteCard> cardsByKey, List<Set> sets) throws AbortException {
 		
-		File imageSetsDir = new File(octgnDir, "ImageDatabase/"+octgnPluginConfig.getPluginId()+"/Sets");
-		imageSetsDir.mkdirs();
+		String pluginId;
+		String imageBaseUrl;
+		synchronized(this) {
+			pluginId = octgnPluginConfig.getPluginId();
+			imageBaseUrl = octgnPluginConfig.getImageBaseUrl();
+		}
 		
-		String imageBaseUrl = octgnPluginConfig.getImageBaseUrl();
+		File imageSetsDir = new File(octgnDir, "ImageDatabase/"+pluginId+"/Sets");
+		imageSetsDir.mkdirs();
 		
 		for(Set set : sets) {
 			final String setId = set.getId();

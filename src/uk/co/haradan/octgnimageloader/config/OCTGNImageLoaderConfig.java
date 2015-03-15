@@ -1,4 +1,4 @@
-package uk.co.haradan.octgnimageloader;
+package uk.co.haradan.octgnimageloader.config;
 
 import uk.co.haradan.octgnimageloader.cardkeys.CardKeyBuilderConfig;
 
@@ -17,6 +17,7 @@ public class OCTGNImageLoaderConfig {
 	private final String cardsUrl;
 	private final String imageBaseUrl;
 	private final CardKeyBuilderConfig cardKeyBuilderConfig;
+	private final SetSorter setSorter;
 	
 	public static final OCTGNImageLoaderConfig NETRUNNER_CONFIG;
 	public static final OCTGNImageLoaderConfig DOOMTOWN_CONFIG;
@@ -27,25 +28,29 @@ public class OCTGNImageLoaderConfig {
 				"Android-Netrunner",
 				NETRUNNERDB_CARDS_URL,
 				NETRUNNERDB_IMAGE_BASE_URL,
-				CardKeyBuilderConfig.NETRUNNER_CONFIG);
+				CardKeyBuilderConfig.NETRUNNER_CONFIG,
+				new SetSorterNetrunner());
 		
 		DOOMTOWN_CONFIG = new OCTGNImageLoaderConfig(DOOMTOWN_PLUGIN_ID,
 				"Doomtown-Reloaded",
 				DOOMTOWN_CARDS_URL,
 				DOOMTOWN_IMAGE_BASE_URL,
-				CardKeyBuilderConfig.DOOMTOWN_CONFIG);
+				CardKeyBuilderConfig.DOOMTOWN_CONFIG,
+				new SetSorterByName());
 		
 		BUILTIN_CONFIGS = new OCTGNImageLoaderConfig[] { NETRUNNER_CONFIG, DOOMTOWN_CONFIG };
 	}
 	
 	public OCTGNImageLoaderConfig(String pluginId, String pluginName,
 			String cardsUrl, String imageBaseUrl,
-			CardKeyBuilderConfig cardKeyBuilderConfig) {
+			CardKeyBuilderConfig cardKeyBuilderConfig,
+			SetSorter setSorter) {
 		this.pluginId = pluginId;
 		this.pluginName = pluginName;
 		this.cardsUrl = cardsUrl;
 		this.imageBaseUrl = imageBaseUrl;
 		this.cardKeyBuilderConfig = cardKeyBuilderConfig;
+		this.setSorter = setSorter;
 	}
 
 	public String getPluginId() {
@@ -62,6 +67,9 @@ public class OCTGNImageLoaderConfig {
 	}
 	public String getImageBaseUrl() {
 		return imageBaseUrl;
+	}
+	public SetSorter getSetSorter() {
+		return setSorter;
 	}
 
 }

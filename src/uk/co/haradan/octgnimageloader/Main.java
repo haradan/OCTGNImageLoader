@@ -1,5 +1,7 @@
 package uk.co.haradan.octgnimageloader;
 
+import java.io.File;
+
 
 
 public class Main {
@@ -10,7 +12,7 @@ public class Main {
 		OCTGNImageLoaderUI view = new OCTGNImageLoaderUI(model);
 		
 		if(args.length > 0) {
-			view.setDirectory(args[0]);
+			view.setDirectory(new File(args[0]));
 		}
 	}
 
