@@ -133,6 +133,7 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 	
 	private void loadSets(File octgnDir) {
 		List<Set> sets = loader.loadSets(log, octgnDir);
+		if(sets == null) return;
 		synchronized(this) {
 			loadedSets = sets;
 			int numSets = sets.size();
@@ -400,7 +401,7 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 		dialog.add(panel, BorderLayout.CENTER);
 		dialog.add(btnPanel, BorderLayout.SOUTH);
 		
-		dialog.setSize(300, 500);
+		dialog.setSize(330, 500);
 		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
