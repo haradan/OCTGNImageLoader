@@ -27,6 +27,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import uk.co.haradan.octgnimageloader.config.OCTGNImageLoaderConfig;
@@ -296,6 +297,8 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 				case 0:
 					return "Set Name";
 				case 1:
+					return "Size";
+				case 2:
 					return "Selected";
 				}
 				return null;
@@ -307,6 +310,8 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 				case 0:
 					return String.class;
 				case 1:
+					return Integer.class;
+				case 2:
 					return Boolean.class;
 				}
 				return null;
@@ -314,12 +319,12 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 			
 			@Override
 			public boolean isCellEditable(int rowIndex, int columnIndex) {
-				return columnIndex == 1;
+				return columnIndex == 2;
 			}
 
 			@Override
 			public int getColumnCount() {
-				return 2;
+				return 3;
 			}
 
 			@Override
@@ -329,11 +334,13 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex) {
+				Set set = showSets.get(rowIndex);
 				switch(columnIndex) {
 				case 0:
-					Set set = showSets.get(rowIndex);
 					return set.getName();
 				case 1:
+					return set.getCards().size();
+				case 2:
 					return selected[rowIndex];
 				}
 				return null;
@@ -341,7 +348,7 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 			
 			@Override
 			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-				if(columnIndex == 1) {
+				if(columnIndex == 2) {
 					selected[rowIndex] = (Boolean) aValue;
 				}
 			}
@@ -384,12 +391,16 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 
 		JPanel panel = new JPanel(new BorderLayout());
 		JTable table = new JTable(model);
+		TableColumnModel colModel = table.getColumnModel();
+		colModel.getColumn(0).setPreferredWidth(100);
+		colModel.getColumn(1).setPreferredWidth(5);
+		colModel.getColumn(2).setPreferredWidth(5);
 		panel.add(table.getTableHeader(), BorderLayout.NORTH);
 		panel.add(new JScrollPane(table), BorderLayout.CENTER);
 		dialog.add(panel, BorderLayout.CENTER);
 		dialog.add(btnPanel, BorderLayout.SOUTH);
 		
-		dialog.setSize(400, 500);
+		dialog.setSize(300, 500);
 		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
