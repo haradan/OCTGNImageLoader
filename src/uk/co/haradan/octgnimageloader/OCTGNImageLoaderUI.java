@@ -287,7 +287,7 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 		
 		final int numSets = showSets.size();
 		
-		TableModel model = new AbstractTableModel() {
+		final AbstractTableModel model = new AbstractTableModel() {
 			private static final long serialVersionUID = 1239735833071248351L;
 			
 			@Override
@@ -354,15 +354,42 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 				dialog.dispose();
 			}
 		});
+		
+		JButton selectAllBtn = new JButton("Select All");
+		selectAllBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				for(int i=0; i<selected.length; i++) {
+					selected[i] = true;
+				}
+				model.fireTableDataChanged();
+			}
+		});
+		
+		JButton selectNoneBtn = new JButton("Select None");
+		selectNoneBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				for(int i=0; i<selected.length; i++) {
+					selected[i] = false;
+				}
+				model.fireTableDataChanged();
+			}
+		});
+		
+		JPanel btnPanel = new JPanel(new BorderLayout());
+		btnPanel.add(selectAllBtn, BorderLayout.NORTH);
+		btnPanel.add(selectNoneBtn, BorderLayout.CENTER);
+		btnPanel.add(okBtn, BorderLayout.SOUTH);
 
 		JPanel panel = new JPanel(new BorderLayout());
 		JTable table = new JTable(model);
 		panel.add(table.getTableHeader(), BorderLayout.NORTH);
 		panel.add(new JScrollPane(table), BorderLayout.CENTER);
 		dialog.add(panel, BorderLayout.CENTER);
-		dialog.add(okBtn, BorderLayout.SOUTH);
+		dialog.add(btnPanel, BorderLayout.SOUTH);
 		
-		dialog.setSize(400, 200);
+		dialog.setSize(400, 500);
 		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);

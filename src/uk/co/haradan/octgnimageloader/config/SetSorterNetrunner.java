@@ -27,23 +27,14 @@ public class SetSorterNetrunner implements SetSorter {
 			String cardId = card.getId();
 			int idLen = cardId.length();
 			
-			String cardNumStr = cardId.substring(idLen-3);
-			while(cardNumStr.startsWith("0") && cardNumStr.length() > 1) {
-				cardNumStr = cardNumStr.substring(1);
+			String cycleCardNumStr = cardId.substring(idLen-5);
+			while(cycleCardNumStr.startsWith("0") && cycleCardNumStr.length() > 1) {
+				cycleCardNumStr = cycleCardNumStr.substring(1);
 			}
+			int cycleCardNum;
 			try {
-				Integer.parseInt(cardNumStr);
-			} catch(NumberFormatException e) {
-				continue;
-			}
-			
-			String setNumStr = cardId.substring(idLen-5, idLen-3);
-			while(setNumStr.startsWith("0") && setNumStr.length() > 1) {
-				setNumStr = setNumStr.substring(1);
-			}
-			try {
-				int setNum = Integer.parseInt(setNumStr);
-				set.setNumber(setNum);
+				cycleCardNum = Integer.parseInt(cycleCardNumStr);
+				set.setNumber(cycleCardNum);
 			} catch(NumberFormatException e) {
 				continue;
 			}

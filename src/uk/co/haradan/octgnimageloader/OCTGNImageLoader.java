@@ -276,7 +276,7 @@ public class OCTGNImageLoader {
 		
 		for(Set set : sets) {
 			final String setId = set.getId();
-			log.println("Downloading cards for set \""+set.getName()+"\" ("+setId+")");
+			log.println("Downloading cards for set \""+set.getName()+"\" (OCTGN dir "+setId+")");
 			
 			File setImgDir = new File(imageSetsDir, setId+"/Cards");
 			setImgDir.mkdirs();
