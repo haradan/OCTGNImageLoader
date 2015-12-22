@@ -13,6 +13,10 @@ public class StringToVariableCase implements StringProcessor {
 	}
 	
 	public String process(String string) {
+		return convert(string);
+	}
+	
+	public static String convert(String string) {
 		
 		// Remove accents
 		string = Normalizer.normalize(string, Normalizer.Form.NFD);

@@ -10,6 +10,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -41,9 +42,15 @@ public class OCTGNImageLoader {
 	private boolean isAbort = false;
 	
 	private AbortListener abortListener;
+	private java.util.Set<SetLoadListener> setLoadListeners = new HashSet<SetLoadListener>();
 	
 	public static interface AbortListener {
 		public boolean isAbort();
+	}
+
+	public static interface SetLoadListener {
+		public void onSetsLoaded(File loadedDir, List<Set> sets);
+		public void onSetLoadFailed(File attemptedDir, Exception e);
 	}
 	
 	private synchronized void activate() throws InterruptedException {
@@ -80,12 +87,25 @@ public class OCTGNImageLoader {
 		this.octgnPluginConfig = octgnPluginConfig;
 	}
 	
-	public List<Set> loadSets(LogOutput log, File octgnDir) {
+	public void addSetLoadListener(SetLoadListener l) {
+		setLoadListeners.add(l);
+	}
+	
+	public void removeSetLoadListener(SetLoadListener l) {
+		setLoadListeners.remove(l);
+	}
+	
+	public void loadSets(LogOutput log, File octgnDir) {
 		try {
-			return readSets(log, octgnDir);
+			List<Set> sets = readSets(log, octgnDir);
+			for(SetLoadListener l : setLoadListeners) {
+				l.onSetsLoaded(octgnDir, sets);
+			}
 		} catch (Exception e) {
 			log.error(e);
-			return null;
+			for(SetLoadListener l : setLoadListeners) {
+				l.onSetLoadFailed(octgnDir, e);
+			}
 		}
 	}
 	
