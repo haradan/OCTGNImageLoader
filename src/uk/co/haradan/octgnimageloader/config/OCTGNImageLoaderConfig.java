@@ -16,7 +16,7 @@ public class OCTGNImageLoaderConfig {
 	private final String pluginName;
 	private final String cardsUrl;
 	private final String imageBaseUrl;
-	private final CardKeyBuilderConfig cardKeyBuilderConfig;
+	private final CardKeyBuilderConfig<?> cardKeyBuilderConfig;
 	private final SetSorter setSorter;
 	
 	public static final OCTGNImageLoaderConfig NETRUNNER_CONFIG;
@@ -43,7 +43,7 @@ public class OCTGNImageLoaderConfig {
 	
 	public OCTGNImageLoaderConfig(String pluginId, String pluginName,
 			String cardsUrl, String imageBaseUrl,
-			CardKeyBuilderConfig cardKeyBuilderConfig,
+			CardKeyBuilderConfig<?> cardKeyBuilderConfig,
 			SetSorter setSorter) {
 		this.pluginId = pluginId;
 		this.pluginName = pluginName;
@@ -59,7 +59,7 @@ public class OCTGNImageLoaderConfig {
 	public String getPluginName() {
 		return pluginName;
 	}
-	public CardKeyBuilderConfig getCardKeyBuilderConfig() {
+	public CardKeyBuilderConfig<?> getCardKeyBuilderConfig() {
 		return cardKeyBuilderConfig;
 	}
 	public String getCardsUrl() {
