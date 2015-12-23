@@ -4,17 +4,17 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import uk.co.haradan.octgnimageloader.cardkeys.SaxCardKeyBuilder;
+import uk.co.haradan.octgnimageloader.cardkeys.OctgnCardKeyBuilder;
 
-public class SetXmlHandler extends DefaultHandler {
+public class OCTGNSetXmlHandler extends DefaultHandler {
 	
-	private final SaxCardKeyBuilder[] cardKeyBuilders;
+	private final OctgnCardKeyBuilder<?> cardKeyBuilder;
 	private Set set = new Set();
 	private SetCard card;
 	
-	public SetXmlHandler(String setId, SaxCardKeyBuilder[] cardKeyBuilders) {
+	public OCTGNSetXmlHandler(String setId, OctgnCardKeyBuilder<?> cardKeyBuilder) {
 		set.setId(setId);
-		this.cardKeyBuilders = cardKeyBuilders;
+		this.cardKeyBuilder = cardKeyBuilder;
 	}
 
 	@Override
@@ -25,6 +25,7 @@ public class SetXmlHandler extends DefaultHandler {
 			String name = attributes.getValue("name");
 			if(name == null) return;
 			set.setName(name);
+			cardKeyBuilder.startSet(attributes);
 			
 		} else if("card".equals(qName)) {
 			
@@ -37,13 +38,9 @@ public class SetXmlHandler extends DefaultHandler {
 			card.setName(name);
 			set.addCard(card);
 			
-			for(SaxCardKeyBuilder builder : cardKeyBuilders) {
-				builder.startCard(attributes);
-			}
+			cardKeyBuilder.startCard(attributes);
 		} else if("property".equals(qName)) {
-			for(SaxCardKeyBuilder builder : cardKeyBuilders) {
-				builder.startProperty(attributes);
-			}
+			cardKeyBuilder.startProperty(attributes);
 		}
 	}
 	
@@ -51,11 +48,14 @@ public class SetXmlHandler extends DefaultHandler {
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 		if("card".equals(qName)) {
-			for(SaxCardKeyBuilder builder : cardKeyBuilders) {
-				builder.endCard();
-				card.getCardKey().addKeyPart(builder.getKey());
-			}
+			card.setCardKey(cardKeyBuilder.buildKey());
+			cardKeyBuilder.endCard();
 		}
+	}
+	
+	@Override
+	public void endDocument() throws SAXException {
+		cardKeyBuilder.endSet();
 	}
 	
 	public Set getSet() {

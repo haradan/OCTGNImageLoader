@@ -1,29 +1,35 @@
 package uk.co.haradan.octgnimageloader.cardkeys;
 
 
-public class CardKeyBuilderConfig {
+public class CardKeyBuilderConfig<KeyType extends CardKey> {
 	
-	private final SaxCardKeyBuilder[] saxKeyBuilders;
-	private final JsonCardKeyBuilder[] jsonKeyBuilders;
+	private final OctgnCardKeyBuilder<KeyType> octgnKeyBuilder;
+	private final JsonCardKeyBuilder<KeyType> websiteKeyBuilder;
 	
-	public CardKeyBuilderConfig(SaxCardKeyBuilder[] saxKeyBuilders, JsonCardKeyBuilder[] jsonKeyBuilders) {
-		this.saxKeyBuilders = saxKeyBuilders;
-		this.jsonKeyBuilders = jsonKeyBuilders;
+	public CardKeyBuilderConfig(OctgnCardKeyBuilder<KeyType> octgnKeyBuilder, JsonCardKeyBuilder<KeyType> websiteKeyBuilder) {
+		this.octgnKeyBuilder = octgnKeyBuilder;
+		this.websiteKeyBuilder = websiteKeyBuilder;
 	}
 	
-	public SaxCardKeyBuilder[] getSaxKeyBuilders() {
-		return saxKeyBuilders;
+	public OctgnCardKeyBuilder<KeyType> getOctgnKeyBuilder() {
+		return octgnKeyBuilder;
 	}
-	public JsonCardKeyBuilder[] getJsonKeyBuilders() {
-		return jsonKeyBuilders;
+	public JsonCardKeyBuilder<KeyType> getWebsiteKeyBuilder() {
+		return websiteKeyBuilder;
 	}
 	
-	public final static CardKeyBuilderConfig NETRUNNER_CONFIG = new CardKeyBuilderConfig(
-			new SaxCardKeyBuilder[] { new NetrunnerSaxCardKeyBuilder() },
-			new JsonCardKeyBuilder[] { new NetrunnerJsonCardKeyBuilder() });
+	public final static CardKeyBuilderConfig<NetrunnerCardKey> NETRUNNER_CONFIG = new CardKeyBuilderConfig<NetrunnerCardKey>(
+			new NetrunnerOctgnCardKeyBuilder(),
+			new NetrunnerJsonCardKeyBuilder());
 	
-	public final static CardKeyBuilderConfig DOOMTOWN_CONFIG = new CardKeyBuilderConfig(
-			new SaxCardKeyBuilder[] { new SaxCardAttributeBuilder("name", StringToVariableCase.PROCESSOR), new SaxCardPropertyBuilder("Type") },
-			new JsonCardKeyBuilder[] { new JsonCardFieldBuilder("title", StringToVariableCase.PROCESSOR), new JsonCardFieldBuilder("type") });
+	public final static CardKeyBuilderConfig<VagueNamesCardKey> DOOMTOWN_CONFIG;
+	
+	static {
+		VagueNamesJsonCardKeyBuilder webKeyBuilder = new VagueNamesJsonCardKeyBuilder("title", "pack", "type");
+		webKeyBuilder.addSetNameSubstitution("Base Set", "Core Set");
+		DOOMTOWN_CONFIG = new CardKeyBuilderConfig<VagueNamesCardKey>(
+				new VagueNamesOctgnCardKeyBuilder("Type"),
+				webKeyBuilder);
+	}
 
 }

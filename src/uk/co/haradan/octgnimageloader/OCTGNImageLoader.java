@@ -23,7 +23,7 @@ import org.xml.sax.SAXException;
 import uk.co.haradan.octgnimageloader.cardkeys.CardKey;
 import uk.co.haradan.octgnimageloader.cardkeys.CardKeyBuilderConfig;
 import uk.co.haradan.octgnimageloader.cardkeys.JsonCardKeyBuilder;
-import uk.co.haradan.octgnimageloader.cardkeys.SaxCardKeyBuilder;
+import uk.co.haradan.octgnimageloader.cardkeys.OctgnCardKeyBuilder;
 import uk.co.haradan.octgnimageloader.config.OCTGNImageLoaderConfig;
 import uk.co.haradan.octgnimageloader.config.SetSorter;
 import uk.co.haradan.util.HttpUtils;
@@ -98,11 +98,11 @@ public class OCTGNImageLoader {
 		
 		String pluginId;
 		String pluginName;
-		SaxCardKeyBuilder[] cardKeyBuilders;
+		OctgnCardKeyBuilder<?> cardKeyBuilder;
 		SetSorter sorter;
 		synchronized(this) {
-			CardKeyBuilderConfig keyBuilderConf = octgnPluginConfig.getCardKeyBuilderConfig();
-			cardKeyBuilders = keyBuilderConf.getSaxKeyBuilders();
+			CardKeyBuilderConfig<?> keyBuilderConf = octgnPluginConfig.getCardKeyBuilderConfig();
+			cardKeyBuilder = keyBuilderConf.getOctgnKeyBuilder();
 			pluginId = octgnPluginConfig.getPluginId();
 			pluginName = octgnPluginConfig.getPluginName();
 			sorter = octgnPluginConfig.getSetSorter();
@@ -134,7 +134,7 @@ public class OCTGNImageLoader {
 		List<Set> sets = new ArrayList<Set>();
 		for(File setDir : setDirs) {
 			File setXml = new File(setDir, "set.xml");
-			SetXmlHandler handler = new SetXmlHandler(setDir.getName(), cardKeyBuilders);
+			OCTGNSetXmlHandler handler = new OCTGNSetXmlHandler(setDir.getName(), cardKeyBuilder);
 		    try {
 				parser.parse(setXml, handler);
 			} catch (Exception e) {
@@ -172,7 +172,7 @@ public class OCTGNImageLoader {
 			return;
 		}
 		
-		CardKeyBuilderConfig keyBuilderConf;
+		CardKeyBuilderConfig<?> keyBuilderConf;
 		String cardsUrl;
 		
 		synchronized(this) {
@@ -184,7 +184,7 @@ public class OCTGNImageLoader {
 		
 		Map<CardKey, WebsiteCard> cardsByNum;
 		try {
-			cardsByNum = readCardsByKeys(cardsUrl, keyBuilderConf.getJsonKeyBuilders());
+			cardsByNum = readCardsByKeys(cardsUrl, keyBuilderConf.getWebsiteKeyBuilder());
 		} catch (Exception e) {
 			log.error(e);
 			return;
@@ -195,21 +195,21 @@ public class OCTGNImageLoader {
 		log.println("Complete");
 	}
 	
-	private static Map<CardKey, WebsiteCard> readCardsByKeys(String url, JsonCardKeyBuilder[] builders) throws JsonParseException, IOException, KeyManagementException, NoSuchAlgorithmException {
+	private static Map<CardKey, WebsiteCard> readCardsByKeys(String url, JsonCardKeyBuilder<?> builder) throws JsonParseException, IOException, KeyManagementException, NoSuchAlgorithmException {
 		URLConnection conn = HttpUtils.getConnection(url);
 		InputStream is = conn.getInputStream();
 		try {
 			JsonFactory jsonFactory = new JsonFactory();
 			JsonParser parser = jsonFactory.createParser(is);
 			
-			return readCardsByKeys(parser, builders);
+			return readCardsByKeys(parser, builder);
 			
 		} finally {
 			is.close();
 		}
 	}
 	
-	private static Map<CardKey, WebsiteCard> readCardsByKeys(JsonParser parser, JsonCardKeyBuilder[] builders) throws JsonParseException, IOException {
+	private static Map<CardKey, WebsiteCard> readCardsByKeys(JsonParser parser, JsonCardKeyBuilder<?> keyBuilder) throws JsonParseException, IOException {
 		
 		JsonToken token = parser.nextToken();
 		if(token != JsonToken.START_ARRAY) {
@@ -223,17 +223,13 @@ public class OCTGNImageLoader {
 			
 			if(token == JsonToken.START_OBJECT) {
 				card = new WebsiteCard();
-				for(JsonCardKeyBuilder builder : builders) {
-					builder.startCard();
-				}
+				keyBuilder.startCard();
 				
 			} else if(token == JsonToken.FIELD_NAME) {
 				String fieldName = parser.getCurrentName();
 				JsonToken valueToken = parser.nextToken();
 				
-				for(JsonCardKeyBuilder builder : builders) {
-					builder.readField(fieldName, valueToken, parser);
-				}
+				keyBuilder.readField(fieldName, valueToken, parser);
 				
 				if("title".equals(fieldName)) {
 					String title = parser.getValueAsString();
@@ -245,12 +241,8 @@ public class OCTGNImageLoader {
 				
 			} else if(token == JsonToken.END_OBJECT) {
 
-				CardKey key = new CardKey();
-				for(JsonCardKeyBuilder builder : builders) {
-					builder.endCard();
-					String keyPart = builder.getKey();
-					key.addKeyPart(keyPart);
-				}
+				keyBuilder.endCard();
+				CardKey key = keyBuilder.buildKey();
 				
 				cardsByKey.put(key, card);
 				

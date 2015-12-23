@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-public class NetrunnerJsonCardKeyBuilder implements JsonCardKeyBuilder {
+public class NetrunnerJsonCardKeyBuilder implements JsonCardKeyBuilder<NetrunnerCardKey> {
 	
 	private int cycleNum;
 	private int cardNum;
@@ -32,11 +32,10 @@ public class NetrunnerJsonCardKeyBuilder implements JsonCardKeyBuilder {
 	public void endCard() {}
 
 	@Override
-	public String getKey() {
+	public NetrunnerCardKey buildKey() {
 		if(cycleNum < 0 || cardNum < 0) return null;
 		
-		// OCTGN Netrunner card ids always end with their cycle number and card number in this format, so we can identify them this way.
-		return String.format("%1$02d%2$03d", cycleNum, cardNum);
+		return new NetrunnerCardKey(cycleNum, cardNum);
 	}
 	
 }

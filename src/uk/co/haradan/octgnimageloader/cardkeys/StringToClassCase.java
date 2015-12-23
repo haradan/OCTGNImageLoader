@@ -5,14 +5,10 @@ import java.text.Normalizer;
 import org.apache.commons.lang3.StringUtils;
 
 
-public class StringToVariableCase implements StringProcessor {
+public class StringToClassCase {
 	
-	public static final StringToVariableCase PROCESSOR = new StringToVariableCase();
-	
-	private StringToVariableCase() {
-	}
-	
-	public String process(String string) {
+	public static String process(String string) {
+		if(string == null) return null;
 		
 		// Remove accents
 		string = Normalizer.normalize(string, Normalizer.Form.NFD);
@@ -20,9 +16,9 @@ public class StringToVariableCase implements StringProcessor {
 
 		// Split into words and convert to Java variable case
 		String[] parts = string.split("[^A-Za-z0-9]+");
-		parts[0] = parts[0].toLowerCase();
-		for(int i=1; i<parts.length; i++) {
+		for(int i=0; i<parts.length; i++) {
 			String part = parts[i];
+			if(part.length() < 1) continue;
 			char[] arr = part.toCharArray();
 			arr[0] = Character.toUpperCase(arr[0]);
 			for(int j=1; j<arr.length; j++) {

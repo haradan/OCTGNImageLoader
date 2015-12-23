@@ -6,7 +6,7 @@ public class SetCard {
 	
 	private String id;
 	private String name;
-	private CardKey cardKey = new CardKey();
+	private CardKey cardKey;
 	
 	public String getId() {
 		return id;
@@ -19,6 +19,9 @@ public class SetCard {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	public void setCardKey(CardKey cardKey) {
+		this.cardKey = cardKey;
 	}
 	public CardKey getCardKey() {
 		return cardKey;
