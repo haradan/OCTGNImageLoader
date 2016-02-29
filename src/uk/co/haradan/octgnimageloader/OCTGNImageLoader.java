@@ -25,6 +25,7 @@ import uk.co.haradan.octgnimageloader.cardkeys.CardKeyBuilderConfig;
 import uk.co.haradan.octgnimageloader.cardkeys.JsonCardKeyBuilder;
 import uk.co.haradan.octgnimageloader.cardkeys.OctgnCardKeyBuilder;
 import uk.co.haradan.octgnimageloader.config.OCTGNImageLoaderConfig;
+import uk.co.haradan.octgnimageloader.config.SetSelector;
 import uk.co.haradan.octgnimageloader.config.SetSorter;
 import uk.co.haradan.util.HttpUtils;
 
@@ -147,6 +148,11 @@ public class OCTGNImageLoader {
 		if(sorter != null) sorter.sort(sets);
 		log.println("Found "+sets.size()+" sets");
 		return sets;
+	}
+	
+	public SetSelector getSetSelector() {
+		if(octgnPluginConfig == null) return null;
+		return octgnPluginConfig.getSetSelector();
 	}
 
 	public void downloadOctgnImages(LogOutput log, File octgnDir, List<Set> sets, AbortListener abortListener) {

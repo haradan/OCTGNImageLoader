@@ -6,10 +6,14 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-public class NetrunnerJsonCardKeyBuilder implements JsonCardKeyBuilder<NetrunnerCardKey> {
+public class NetrunnerJsonCardKeyBuilder extends VagueNamesJsonCardKeyBuilder<NetrunnerCardKey> {
 	
 	private int cycleNum;
 	private int cardNum;
+	
+	public NetrunnerJsonCardKeyBuilder() {
+		super("title", "setname", "type");
+	}
 
 	@Override
 	public void startCard() {
@@ -33,9 +37,7 @@ public class NetrunnerJsonCardKeyBuilder implements JsonCardKeyBuilder<Netrunner
 
 	@Override
 	public NetrunnerCardKey buildKey() {
-		if(cycleNum < 0 || cardNum < 0) return null;
-		
-		return new NetrunnerCardKey(cycleNum, cardNum);
+		return new NetrunnerCardKey(cycleNum, cardNum, cardName, setName, typeName);
 	}
 	
 }

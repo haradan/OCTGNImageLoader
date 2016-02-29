@@ -31,6 +31,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import uk.co.haradan.octgnimageloader.config.OCTGNImageLoaderConfig;
+import uk.co.haradan.octgnimageloader.config.SetSelector;
 
 public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 
@@ -134,11 +135,15 @@ public class OCTGNImageLoaderUI implements ActionListener, WindowListener {
 	private void loadSets(File octgnDir) {
 		List<Set> sets = loader.loadSets(log, octgnDir);
 		if(sets == null) return;
+		SetSelector setSelector = loader.getSetSelector();
 		synchronized(this) {
 			loadedSets = sets;
 			int numSets = sets.size();
 			setsSelected = new boolean[numSets];
-			for(int i=0; i<numSets; i++) setsSelected[i] = true;
+			for(int i=0; i<numSets; i++) {
+				Set set = sets.get(i);
+				setsSelected[i] = setSelector.isSelect(set);
+			}
 			dirTxt.setText(octgnDir.getAbsolutePath());
 		}
 	}

@@ -4,44 +4,60 @@ import org.xml.sax.Attributes;
 
 public class NetrunnerOctgnCardKeyBuilder implements OctgnCardKeyBuilder<NetrunnerCardKey> {
 	
-	private NetrunnerCardKey key;
+	private int cycleNum = -1;
+	private int cardNum = -1;
+	private String cardName;
+	private String setName;
+	private String type;
 
 	@Override
 	public void startCard(Attributes attrs) {
+		
+		cardName = attrs.getValue("name");
+		
 		String id = attrs.getValue("id");
-		if(id == null) key = null;
+		if(id == null) return;
 		int idLen = id.length();
-		String setStr = id.substring(idLen-5, idLen-3);
-		int setNum;
+		
+		String cycleStr = id.substring(idLen-5, idLen-3);
 		try {
-			setNum = Integer.parseInt(setStr);
-		} catch(NumberFormatException e) {
-			setNum = 0;
-		}
+			cycleNum = Integer.parseInt(cycleStr);
+		} catch(NumberFormatException e) {}
+		
 		String cardStr = id.substring(idLen-3);
-		int cardNum;
 		try {
 			cardNum = Integer.parseInt(cardStr);
-		} catch(NumberFormatException e) {
-			cardNum = 0;
-		}
-		key = new NetrunnerCardKey(setNum, cardNum);
+		} catch(NumberFormatException e) {}
 	}
 
 	@Override
-	public void startProperty(Attributes attrs) {}
-
-	@Override
-	public void endCard() {}
+	public void startProperty(Attributes attrs) {
+		String name = attrs.getValue("name");
+		if("Type".equals(name)) {
+			type = attrs.getValue("value");
+		}
+	}
 
 	@Override
 	public NetrunnerCardKey buildKey() {
-		return key;
+		return new NetrunnerCardKey(cycleNum, cardNum, cardName, setName, type);
 	}
 
 	@Override
-	public void startSet(Attributes attrs) {}
+	public void endCard() {
+		cycleNum = -1;
+		cardNum = -1;
+		cardName = null;
+		type = null;
+	}
+
 	@Override
-	public void endSet() {}
+	public void startSet(Attributes attrs) {
+		setName = attrs.getValue("name");
+	}
+	@Override
+	public void endSet() {
+		setName = null;
+	}
 
 }

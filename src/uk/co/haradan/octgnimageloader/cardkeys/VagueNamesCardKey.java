@@ -11,9 +11,6 @@ public class VagueNamesCardKey extends CardKey {
 	}
 	
 	public VagueNamesCardKey(String cardName, String setName, String typeName) {
-		if(cardName.toLowerCase().contains("swinford")) {
-			System.out.println();
-		}
 		this.setName = StringToClassCase.process(setName);
 		this.cardName = StringToClassCase.process(cardName);
 		this.typeName = StringToClassCase.process(typeName);

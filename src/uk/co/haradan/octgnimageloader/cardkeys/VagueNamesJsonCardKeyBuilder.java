@@ -9,14 +9,14 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
-public class VagueNamesJsonCardKeyBuilder implements JsonCardKeyBuilder<VagueNamesCardKey> {
+public abstract class VagueNamesJsonCardKeyBuilder<K extends VagueNamesCardKey> implements JsonCardKeyBuilder<K> {
 	
 	private final String setNameField;
 	private final String cardNameField;
 	private final String typeNameField;
-	private String setName;
-	private String cardName;
-	private String typeName;
+	protected String setName;
+	protected String cardName;
+	protected String typeName;
 	private Map<String, String> setNameSubstitutions = new HashMap<String, String>();
 	private Map<String, String> cardNameSubstitutions = new HashMap<String, String>();
 	private Map<String, String> typeNameSubstitutions = new HashMap<String, String>();
@@ -70,10 +70,7 @@ public class VagueNamesJsonCardKeyBuilder implements JsonCardKeyBuilder<VagueNam
 
 	@Override
 	public void endCard() {}
-
-	@Override
-	public VagueNamesCardKey buildKey() {
-		return new VagueNamesCardKey(cardName, setName, typeName);
-	}
+	
+	public abstract K buildKey();
 	
 }

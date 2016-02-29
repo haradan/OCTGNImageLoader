@@ -18,6 +18,7 @@ public class OCTGNImageLoaderConfig {
 	private final String imageBaseUrl;
 	private final CardKeyBuilderConfig<?> cardKeyBuilderConfig;
 	private final SetSorter setSorter;
+	private final SetSelector setSelector;
 	
 	public static final OCTGNImageLoaderConfig NETRUNNER_CONFIG;
 	public static final OCTGNImageLoaderConfig DOOMTOWN_CONFIG;
@@ -29,14 +30,16 @@ public class OCTGNImageLoaderConfig {
 				NETRUNNERDB_CARDS_URL,
 				NETRUNNERDB_IMAGE_BASE_URL,
 				CardKeyBuilderConfig.NETRUNNER_CONFIG,
-				new SetSorterNetrunner());
+				new SetSorterNetrunner(),
+				new SetSelectorNetrunner());
 		
 		DOOMTOWN_CONFIG = new OCTGNImageLoaderConfig(DOOMTOWN_PLUGIN_ID,
 				"Doomtown-Reloaded",
 				DOOMTOWN_CARDS_URL,
 				DOOMTOWN_IMAGE_BASE_URL,
 				CardKeyBuilderConfig.DOOMTOWN_CONFIG,
-				new SetSorterByName());
+				new SetSorterByName(),
+				new SetSelectorDefault());
 		
 		BUILTIN_CONFIGS = new OCTGNImageLoaderConfig[] { NETRUNNER_CONFIG, DOOMTOWN_CONFIG };
 	}
@@ -44,13 +47,14 @@ public class OCTGNImageLoaderConfig {
 	public OCTGNImageLoaderConfig(String pluginId, String pluginName,
 			String cardsUrl, String imageBaseUrl,
 			CardKeyBuilderConfig<?> cardKeyBuilderConfig,
-			SetSorter setSorter) {
+			SetSorter setSorter, SetSelector setSelector) {
 		this.pluginId = pluginId;
 		this.pluginName = pluginName;
 		this.cardsUrl = cardsUrl;
 		this.imageBaseUrl = imageBaseUrl;
 		this.cardKeyBuilderConfig = cardKeyBuilderConfig;
 		this.setSorter = setSorter;
+		this.setSelector = setSelector;
 	}
 
 	public String getPluginId() {
@@ -70,6 +74,9 @@ public class OCTGNImageLoaderConfig {
 	}
 	public SetSorter getSetSorter() {
 		return setSorter;
+	}
+	public SetSelector getSetSelector() {
+		return setSelector;
 	}
 
 }

@@ -25,7 +25,7 @@ public class CardKeyBuilderConfig<KeyType extends CardKey> {
 	public final static CardKeyBuilderConfig<VagueNamesCardKey> DOOMTOWN_CONFIG;
 	
 	static {
-		VagueNamesJsonCardKeyBuilder webKeyBuilder = new VagueNamesJsonCardKeyBuilder("title", "pack", "type");
+		VagueNamesJsonCardKeyBuilderDefault webKeyBuilder = new VagueNamesJsonCardKeyBuilderDefault("title", "pack", "type");
 		webKeyBuilder.addSetNameSubstitution("Base Set", "Core Set");
 		DOOMTOWN_CONFIG = new CardKeyBuilderConfig<VagueNamesCardKey>(
 				new VagueNamesOctgnCardKeyBuilder("Type"),
