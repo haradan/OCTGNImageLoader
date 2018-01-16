@@ -1,10 +1,12 @@
 package uk.co.haradan.octgnimageloader;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -20,6 +22,11 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
 import uk.co.haradan.octgnimageloader.cardkeys.CardKey;
 import uk.co.haradan.octgnimageloader.cardkeys.CardKeyBuilderConfig;
 import uk.co.haradan.octgnimageloader.cardkeys.JsonCardKeyBuilder;
@@ -28,11 +35,6 @@ import uk.co.haradan.octgnimageloader.config.OCTGNImageLoaderConfig;
 import uk.co.haradan.octgnimageloader.config.SetSelector;
 import uk.co.haradan.octgnimageloader.config.SetSorter;
 import uk.co.haradan.util.HttpUtils;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 
 public class OCTGNImageLoader {
 	
@@ -127,7 +129,7 @@ public class OCTGNImageLoader {
 			return null;
 		}
 		
-		log.println("Loading sets for "+pluginName+" from OCTGN directory: "+octgnDir.getAbsolutePath());
+		log.println("Loading sets for "+pluginName+" from OCTGN directory: "+gameDbDir.getAbsolutePath());
 
 	    SAXParserFactory spf = SAXParserFactory.newInstance();
 		SAXParser parser = spf.newSAXParser();
@@ -191,12 +193,12 @@ public class OCTGNImageLoader {
 		Map<CardKey, WebsiteCard> cardsByNum;
 		try {
 			cardsByNum = readCardsByKeys(cardsUrl, keyBuilderConf.getWebsiteKeyBuilder());
+			
+			downloadImages(log, octgnDir, cardsByNum, sets);
 		} catch (Exception e) {
 			log.error(e);
 			return;
 		}
-		
-		downloadImages(log, octgnDir, cardsByNum, sets);
 		
 		log.println("Complete");
 	}
@@ -206,9 +208,17 @@ public class OCTGNImageLoader {
 		InputStream is = conn.getInputStream();
 		try {
 			JsonFactory jsonFactory = new JsonFactory();
-			JsonParser parser = jsonFactory.createParser(is);
-			
-			return readCardsByKeys(parser, builder);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+			JsonParser parser;
+			parser = jsonFactory.createParser(reader);
+//			String json = IOUtils.toString(is);
+//			parser = jsonFactory.createParser(json);
+
+			try {
+				return readCardsByKeys(parser, builder);
+			} catch(JsonParseException e) {
+				throw e;
+			}
 			
 		} finally {
 			is.close();
@@ -218,8 +228,9 @@ public class OCTGNImageLoader {
 	private static Map<CardKey, WebsiteCard> readCardsByKeys(JsonParser parser, JsonCardKeyBuilder<?> keyBuilder) throws JsonParseException, IOException {
 		
 		JsonToken token = parser.nextToken();
-		if(token != JsonToken.START_ARRAY) {
-			return null;
+		while(token != JsonToken.START_ARRAY) {
+			if(token == null) return null;
+			token = parser.nextToken();
 		}
 		
 		Map<CardKey, WebsiteCard> cardsByKey = new HashMap<CardKey, WebsiteCard>();
@@ -242,7 +253,13 @@ public class OCTGNImageLoader {
 					card.setTitle(title);
 				} else if("imagesrc".equals(fieldName)) {
 					String url = parser.getValueAsString();
+					card.setImgPath(url);
+				} else if("image_url".equals(fieldName)) {
+					String url = parser.getValueAsString();
 					card.setImgUrl(url);
+				} else if("code".equals(fieldName)) {
+					String code = parser.getValueAsString();
+					card.setCode(code);
 				}
 				
 			} else if(token == JsonToken.END_OBJECT) {
@@ -264,9 +281,11 @@ public class OCTGNImageLoader {
 		
 		String pluginId;
 		String imageBaseUrl;
+		String imageUrlTemplate;
 		synchronized(this) {
 			pluginId = octgnPluginConfig.getPluginId();
 			imageBaseUrl = octgnPluginConfig.getImageBaseUrl();
+			imageUrlTemplate = octgnPluginConfig.getImageUrlTemplate();
 		}
 		
 		File imageSetsDir = new File(octgnDir, "ImageDatabase/"+pluginId+"/Sets");
@@ -290,17 +309,18 @@ public class OCTGNImageLoader {
 					log.println("Card not in website: \""+setCard.getName()+"\" ("+cardId+")");
 					continue;
 				}
-				String url = card.getImgUrl();
-				if(url == null) {
+				String imgUrl = getFullImgUrl(card, imageBaseUrl, imageUrlTemplate);
+				if(imgUrl == null) {
 					log.println("Card without image URL: \""+card.getTitle()+"\" ("+cardId+")");
 					continue;
 				}
-				url = imageBaseUrl+url;
 
 				// Download new card file
 				File downloadFile = new File(setImgDir, cardId+".png.tmp");
 				try {
-					URLConnection conn = HttpUtils.getConnection(url);
+					URLConnection conn = HttpUtils.getConnection(imgUrl);
+					conn.addRequestProperty("User-Agent", 
+							"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)");
 					InputStream is = conn.getInputStream();
 					try {
 						FileOutputStream os = new FileOutputStream(downloadFile);
@@ -336,6 +356,20 @@ public class OCTGNImageLoader {
 			}
 		}
 		
+	}
+	
+	private String getFullImgUrl(WebsiteCard card, String imageBaseUrl, String imageUrlTemplate) {
+		String url = card.getImgUrl();
+		if(url != null) return url;
+		String path = card.getImgPath();
+		if(path != null && imageBaseUrl != null) {
+			return imageBaseUrl+path;
+		}
+		String code = card.getCode();
+		if(code != null && imageUrlTemplate != null) {
+			return imageUrlTemplate.replace("{code}", code);
+		}
+		return null;
 	}
 
 }
