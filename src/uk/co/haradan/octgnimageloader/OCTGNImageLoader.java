@@ -195,6 +195,8 @@ public class OCTGNImageLoader {
 			cardsByNum = readCardsByKeys(cardsUrl, keyBuilderConf.getWebsiteKeyBuilder());
 			
 			downloadImages(log, octgnDir, cardsByNum, sets);
+		} catch(AbortException e) {
+			throw e;
 		} catch (Exception e) {
 			log.error(e);
 			return;
